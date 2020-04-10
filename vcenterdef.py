@@ -1,5 +1,6 @@
 # ---------------------- VMware vCenter ----------------------
 import requests
+import json
 
 # Authenticate to vCenter
 def get_vc_session(vcip, username, password):

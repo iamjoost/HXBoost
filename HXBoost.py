@@ -52,6 +52,7 @@ import textwrap
 import vcenterdef as vc
 import requests
 import json
+import time
 
 hxsupportedversion = 4.02
 urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
@@ -131,6 +132,7 @@ def check_arg(args=None):
 ###########################################
 ################## MAIN ###################
 ###########################################
+L_hx = []
 
 args = check_arg(sys.argv[1:])
 
@@ -283,6 +285,7 @@ vm_response = json.loads(vms.text)
 json_data = vm_response["value"]
 
 counter = 0
+
 for vm in json_data:
     text = vm.get("name")[0:8]
     # print (text)
