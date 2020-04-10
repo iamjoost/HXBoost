@@ -153,7 +153,7 @@ clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
 
 # Is HyperFLex cluster Healty ?
 hxready = hxdef.hxstatus(hxip, hxtoken, clusteruuid)
-print ("Cluster is Healthy.")
+print ("HyperFlex Cluster is Healthy.")
 if hxready == True:
 
 
@@ -175,11 +175,13 @@ if hxready == True:
         for compute in rack_servers:
             if compute.serial == node[0]:
                 print ("Serials Match: ",compute.serial)
-                #TODO Create list with Modelnumbers
+
                 L_hx[x].extend([compute.model])
                 L_hx[x].extend([int(compute.num_of_cores_enabled)/int(compute.num_of_cpus)])
-                print(L_hx)
-                if not hxdef.hx_in_list(compute.model):
+
+                if hxdef.hx_in_list(compute.model) == 1 or hxdef.hx_in_list(compute.model) == 2:
+                    pass
+                else:
                     print ("This is not an HX All-Flash or HX All-NVMe cluster")
                     hxdef.hxexit(testing)
 
@@ -190,40 +192,9 @@ if hxready == True:
                     hxdef.hxexit(testing)
                 x = x + 1
 
-    print ("Content L_hx: ",L_hx)
-    os._exit(1)
-
 
     handle.logout()
-    exit()
-
-    # TODO Create list of rack_servers. Compare it with L_hx. Find info about it.
- #   for x in L_hx:
-        #if x[0] == vm.get('name')[8:19]:
-        #    x.append(vm.get("name"))
-        #    x.append(vm.get("vm"))
-        #    x.append(False)
-
-
-
-
-            #print("Rack: ", compute.dn)
-            #print("Model: ", compute.model)
-            #print("CPUs: ", compute.num_of_cpus)
-            #print("Cores: ", compute.num_of_cores_enabled)
-            #print("Serial: ", compute.serial)
-        #If Equal : Is it a coorect server
-    #Enough CPU cores
-
-
-
-    # TODO Compare UCS-M Serial with HX Serial
-
-    # Verify All-Flash or All-NVMe
-
-    # Verify Correct Cluster
-
-    # Verify CPU Cores for enable / disable
+    os._exit(1)
 
     print('HyperFlex is Healthy.')
     print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')

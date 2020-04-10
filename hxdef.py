@@ -14,13 +14,20 @@ import requests
 import json
 import os
 
-# Define HX Nodes
+# What model is the HyperFlex node ?
+# 1 = All Flash
+# 2 = All NVMe
+# 0 = The rest.
+
 def hx_in_list(hxmodel):
-    hxnodelist = ['HXAF220C-M5SX', 'HXAF240C-M5SX', 'HXAF230C-M5SX']
-    if hxmodel in hxnodelist:
-        return True
+    hxallflash = ['HXAF220C-M5SX', 'HXAF240C-M5SX']
+    hxallnvme =['HXAF220C-M5SN']
+    if hxmodel in hxallflash:
+        return 1
     else:
-        return False
+        if hxmodel in hxallnvme:
+            return 2
+    return 0
 
 # HX Exit if not testing
 def hxexit(testing):
