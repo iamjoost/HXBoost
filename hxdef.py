@@ -72,6 +72,20 @@ def get_hxuuid(hxip, hxtoken):
 
     return hxuuid
 
+# Get the HyperFlex Version
+#https://10.1.15.13/coreapi/v1/clusters/1525837625288471367%3A5577340641586887964/about
+def get_hxversion(hxip, hxtoken,hxuuid):
+    headers = {
+        "Content-type": "application/json",
+        "Authorization": "Bearer " + hxtoken}
+
+    url = 'https://' + hxip + '/coreapi/v1/clusters/' + hxuuid + '/about'
+    response = requests.get(url, headers=headers, verify=False)
+    hx_response = json.loads(response.text)
+    hxversion = hx_response['displayVersion']
+
+    return hxversion
+
 #Get the Datastores from HyperFLex Cluster
 def get_ds(hxip,hxtoken,hxuuid):
     headers = {
@@ -114,7 +128,7 @@ def delete_ds(hxip,hxtoken,hxuuid,dsuuid):
 
 #HyperFlex Status
 # Is the HyperFlex Cluster Healthy ?
-def hxstatus(hxip, hxtoken, clusteruuid):
+def get_hxstatus(hxip, hxtoken, clusteruuid):
     # https://10.1.15.13/coreapi/v1/clusters/6326623497596061830%3A7687534548531484521/status
 
     headers = {
@@ -139,27 +153,27 @@ def hxstatus(hxip, hxtoken, clusteruuid):
     return True
 
 
-# Get the Controller VM IP and serial number via HyperFlex API.
-def hx_cvm_ser(hxip, hxtoken):
-    # https://10.1.15.13/coreapi/v1/hypervisor/controllervms
-
+# Get the Serial numbers of the nodes.
+def get_hx_ser(hxip, hxtoken,hxuuid):
+    # https://10.1.15.13/coreapi/v1/clusters/1525837625288471367%3A5577340641586887964/about
     headers = {
         "Content-type": "application/json",
         "Authorization": "Bearer " + hxtoken}
 
-    url = 'https://' + hxip + '/rest/appliances'
+    url = 'https://' + hxip + '/coreapi/v1/clusters/' + hxuuid + '/about'
 
-    hxstat = requests.get(url, headers=headers, verify=False)
-    counter = 0
-    L = []
+    response = requests.get(url, headers=headers, verify=False)
+    c = 0
+    hxseriallist = []
 
-    for hxitem in hxstat.json():
-        hxser = (hxitem['serialNumber'])
-        hxcvmip = (hxitem['nodes']['A']['host']['stctlvm']['mgmtNetworkIp'])  # ['host']['ip']['addr']
-        L.append([])
-        L[counter].append(hxser)
-        L[counter].append(hxcvmip)
-        counter = counter + 1
+    hx_response = json.loads(response.text)
+    hxserial = hx_response['serialNumber']
+    hxlist = hxserial.split(",")
 
-    return L
+    for x in hxlist:
+        hxseriallist.append([])
+        hxseriallist[c].append(x)
+        c = c + 1
+
+    return hxseriallist
 

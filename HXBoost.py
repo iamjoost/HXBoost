@@ -48,6 +48,9 @@ import sys
 import getpass
 import urllib3
 import os
+import textwrap
+
+hxsupportedversion = 4.02
 
 ##################
 # Functions ######
@@ -74,53 +77,61 @@ def shutdown_controller(cip):
 
 # Getting the parameters
 def check_arg(args=None):
-    parser = argparse.ArgumentParser(description='Enable/Disable HyperFlex Boost Mode')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=textwrap.dedent('''\
+         *****************   DISCLAIMER   ********************
+         Please read the readme.txt regarding limitations of this script.
+         Use this script at your own risk.
+         To be test this script without change use the argument: --test true 
+         '''))
     parser.add_argument('--hxip',
-                        help='HyperFlex ip'
+                        help='HyperFlex IP Address'
                         )
     parser.add_argument('--hxpasswd',
                         help='HyperFlex Cluster Password'
                         )
     parser.add_argument('--hxuser',
-                        help='hx user name')
+                        help='HyperFlex UserName')
     parser.add_argument('--vcuser',
-                        help='hx user name',
+                        help='vCenter UserName',
                         default='administrator@vsphere.local')
     parser.add_argument('--vcpasswd',
                         help='vCenter Password'
                         )
     parser.add_argument('--vcip',
-                        help='vCenter ip'
+                        help='vCenter IP Address'
                         )
     parser.add_argument('--ucsmuser',
-                        help='UCS-M user name',
+                        help='UCS-M Username',
                         default='admin')
+
     parser.add_argument('--ucsmpasswd',
                         help='UCS-M Password'
                         )
     parser.add_argument('--ucsmip',
-                        help='UCS-M ip'
+                        help='UCS-M IP Address'
                         )
     parser.add_argument('--hxboost',
-                        help='Hyper Flex Boostmode on / off',
+                        help='HyperFlex Boostmode on / off',
                         default='on')
     parser.add_argument('--force',
                         help='Force power off : on / off',
                         default='off')
     parser.add_argument('--hxtoken',
-                        help='HX API Token'
+                        help='HyperFlex API Token'
                         )
     parser.add_argument('--test',
-                        help='Test the script without doing it. true = testing'
+                        help='Test the script without doing it. When set to "true" the script will run and not change the vCPUs.'
                         )
     return parser.parse_args(args)
 
+###########################################
 ################## MAIN ###################
+###########################################
+
 urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
 
-#TODO Start with GetAccessToken
+args = check_arg(sys.argv[1:])
 
-###########################
 print("*****************   DISCLAIMER   ********************")
 print("This script will enable or disable HyperFlex boost mode on a cluster with:")
 print("* HXDP 4.0.2a and higher")
@@ -131,7 +142,6 @@ print("If you don't have a cluster with the required hardware and software, the 
 print()
 print("Use this script on your own responsibility. To test the script use the argument: --test true")
 print ()
-args = check_arg(sys.argv[1:])
 
 hxip = args.hxip
 hxuser = args.hxuser
@@ -184,16 +194,29 @@ if args.hxtoken == None:
 #Get HX CLuster UUID
 clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
 
+#TODO Get the HX Version
+hxversion = hxdef.get_hxversion(hxip,hxtoken,clusteruuid)
+
+hxversion2 = hxversion[:3]
+hxversion2 = hxversion2 + hxversion[4]
+
+if float(hxversion2) >= hxsupportedversion:
+    print("HyperFlex Data Platform version is greater than 4.0(2a)")
+else:
+    print("Please upgrade HXDP to version 4.0(2a) first")
+    hxdef.hxexit(testing)
+
 # Is HyperFLex cluster Healty ?
-hxready = hxdef.hxstatus(hxip, hxtoken, clusteruuid)
+hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
 print ("HyperFlex Cluster is Healthy.")
 if hxready == True:
 
 
     #Get list with serial numbers
-    L_hx = hxdef.hx_cvm_ser(hxip, hxtoken)
+    #Return a list with serial numbers.
+    L_hx = hxdef.get_hx_ser(hxip, hxtoken,clusteruuid)
 
-    # TODO Get UCS-M Info
+    # Get UCS-M Info
     from ucsmsdk.ucshandle import UcsHandle
 
     handle = UcsHandle(ucsmip,ucsmuser,ucsmpasswd)
@@ -201,13 +224,12 @@ if hxready == True:
 
     rack_servers = handle.query_classid("computeRackUnit")
 
-#    L_hx[0].extend(['Hello'])
+
     x = 0
     for node in L_hx:
-        #
         for compute in rack_servers:
             if compute.serial == node[0]:
-                # print ("Serials Match: ",compute.serial)
+                #print ("Serials Match: ",compute.serial)
 
                 L_hx[x].extend([compute.model])
                 L_hx[x].extend([int(compute.num_of_cores_enabled)/int(compute.num_of_cpus)])
@@ -232,6 +254,7 @@ if hxready == True:
 
 
     handle.logout()
+    print (L_hx)
     os._exit(1)
 
     print('HyperFlex is Healthy.')
