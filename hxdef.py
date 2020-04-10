@@ -20,14 +20,16 @@ import os
 # 0 = The rest.
 
 def hx_in_list(hxmodel):
-    hxallflash = ['HXAF220C-M5SX', 'HXAF240C-M5SX']
-    hxallnvme =['HXAF220C-M5SN']
-    if hxmodel in hxallflash:
-        return 1
+    hxflashcores = 12
+    hxnvmecores = 16
+    hxallflash = [['HXAF220C-M5SX', 'HXAF240C-M5SX'],hxflashcores]
+    hxallnvme =[['HXAF220C-M5SN'],hxnvmecores]
+    if hxmodel in hxallflash[0]:
+        return 1,hxallflash[1]
     else:
-        if hxmodel in hxallnvme:
-            return 2
-    return 0
+        if hxmodel in hxallnvme[0]:
+            return 2,hxallnvme[1]
+    return 0,0
 
 # HX Exit if not testing
 def hxexit(testing):
@@ -51,7 +53,7 @@ def get_hxtoken(hxip, hxuser, hxpasswd):
     if hxauth.status_code == 201:
         return (hxauth)
     else:
-        print ("There was an error getting the Token. Please try again in 15 minutes")
+        print ("There was an error getting the Token.")
         print("HTTP Error Code: ",hxauth.status_code)
         print ("Message: ",hxauth.text)
 

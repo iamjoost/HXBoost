@@ -1,23 +1,46 @@
 """
+HyperFlex Boost mode Script
+
 This script will enable or disable HyperFlex Boost Mode on you HyperFlex Cluster.
-Shutdown of the Controller VM via the vCenter API is NOT possible !
-ESXi agent manager is controlling it.
-The script ssh into the controller to shutdown the controller. Herefor you will have to provide
-the root password for the Controller VM.
+Shutdown of the Controller VM via the vCenter API is NOT possible when
+ESXi agent manager (EAM) is controlling the storage controllers
+.
+The script ssh into the controller to shutdown the controller. You will have to provide
+the root password for the Controller VM when it wants to SSH to it.
 
 This solution is tested on HyperFlex 4.0.2a and vCenter 6.7 with vSphere 6.7
+Earlier HXDP of 4.0.2a are not supported.
 
 You can change this script to have it working anyway you want.
 THIS SCRIPT IS NOT IDIOT PROOF
 
---FORCE ON will Power Off the HX CVM !
+--FORCE ON will Power Off the HX CVM ! Use with Caution.
+--tesst True will test the script, ignore the warnings and it WON'T update the stCVM.
 
-SSH has a timeout of 120 Sec. When you don't fill in the password on time, you will hit this timeout and the script won't work correctly.
 
-Author : Joost van der Made 2020
+Author: Joost van der Made
+Email: awesome@iamjoost.com
+
 IAmJoost.com
 
+Copyright (c) 2018 Cisco and/or its affiliates.
+This software is licensed to you under the terms of the Cisco Sample
+Code License, Version 1.0 (the "License"). You may obtain a copy of the
+License at:
+
+             https://developer.cisco.com/docs/licenses
+
+All use of the material herein must be in accordance with the terms of
+the License. All rights not expressly granted by the License are
+reserved. Unless required by applicable law or agreed to separately in
+writing, software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied.
 """
+
+##################
+# Packages #######
+##################
 import hxdef
 import vcenterdef as vc
 import argparse
@@ -25,6 +48,10 @@ import sys
 import getpass
 import urllib3
 import os
+
+##################
+# Functions ######
+##################
 
 # -------------------- SSH -----------------------
 
@@ -91,14 +118,19 @@ def check_arg(args=None):
 ################## MAIN ###################
 urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
 
-#TODO Cisco License ? See MichZimm
-
 #TODO Start with GetAccessToken
 
-# TODO Get HX Serial Numbers
-
 ###########################
-
+print("*****************   DISCLAIMER   ********************")
+print("This script will enable or disable HyperFlex boost mode on a cluster with:")
+print("* HXDP 4.0.2a and higher")
+print("* All Flash cluster with 12 or more physical cores per CPU")
+print("* All NVMe cluster with 16 or more physical cores per CPU.")
+print()
+print("If you don't have a cluster with the required hardware and software, the script cannot run.")
+print()
+print("Use this script on your own responsibility. To test the script use the argument: --test true")
+print ()
 args = check_arg(sys.argv[1:])
 
 hxip = args.hxip
@@ -146,6 +178,7 @@ else:
 if args.hxtoken == None:
     # Get the Token.
     hxbearer = hxdef.get_hxtoken(hxip, hxuser, hxpasswd).json()
+    print (hxbearer)
     hxtoken = hxbearer['access_token']
 
 #Get HX CLuster UUID
@@ -163,7 +196,7 @@ if hxready == True:
     # TODO Get UCS-M Info
     from ucsmsdk.ucshandle import UcsHandle
 
-    handle = UcsHandle("10.1.15.9", "admin", "Hyp3rFlex123!")
+    handle = UcsHandle(ucsmip,ucsmuser,ucsmpasswd)
     handle.login()
 
     rack_servers = handle.query_classid("computeRackUnit")
@@ -174,22 +207,27 @@ if hxready == True:
         #
         for compute in rack_servers:
             if compute.serial == node[0]:
-                print ("Serials Match: ",compute.serial)
+                # print ("Serials Match: ",compute.serial)
 
                 L_hx[x].extend([compute.model])
                 L_hx[x].extend([int(compute.num_of_cores_enabled)/int(compute.num_of_cpus)])
 
-                if hxdef.hx_in_list(compute.model) == 1 or hxdef.hx_in_list(compute.model) == 2:
-                    pass
+
+                hxmodel = hxdef.hx_in_list(compute.model)
+                # hxmodel[0] = 1 for All Flash, 2 for All NVMe
+                # hxmodel[1] = Number of cores needed.
+
+                if hxmodel[0] >= 1:
+                    if int(compute.num_of_cores_enabled) / int(compute.num_of_cpus) >= hxmodel[1]:
+                        print("Over ",hxmodel[1]," Cores. ", compute.num_of_cores_enabled)
+                    else:
+                        print("CPU don't have enough cores.")
+                        hxdef.hxexit(testing)
                 else:
                     print ("This is not an HX All-Flash or HX All-NVMe cluster")
                     hxdef.hxexit(testing)
 
-                if int(compute.num_of_cores_enabled)/int(compute.num_of_cpus) >= 12:
-                    print ("Over 12 Cores. ",compute.num_of_cores_enabled)
-                else:
-                    print("CPU don't have enough cores.")
-                    hxdef.hxexit(testing)
+
                 x = x + 1
 
 
@@ -198,15 +236,6 @@ if hxready == True:
 
     print('HyperFlex is Healthy.')
     print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')
-    print('')
-    print('There is no check which HyperFLex cluster you are using.')
-    print('Only HX All-Flash and HX All-NVMe are supported')
-    print('HyperFlex is NOT supported')
-    print()
-    print('For HyperFlex Boost Mode your CPU needs to have more cores than the new values')
-    print('HX All-Flash -> 12 cores per CPU.')
-    print('HX All-NVMe -> 16 cores per CPU')
-    print('')
     print('This process will take about 5 min per HyperFlex Node')
     print(' ')
     answer = input('Enter yes if you want to continue : ')
