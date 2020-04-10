@@ -1,0 +1,11 @@
+{
+  "hxallflash": [
+                  "HXAF220C-M5SX",
+                  "HXAF240C-M5SX"
+                ]
+              ,
+  "hxallnvme":  [
+                "HXAF220C-M5SN"
+                ]
+
+}
