@@ -215,7 +215,8 @@ if hxready == True:
     print("HyperFlex Cluster is Healthy.")
 
     #Get list with serial numbers
-    #Return a list with serial numbers.
+    #Return a list with [huuid, hx serial number, model, status, stcvm ip],[]
+    # TODO Add CPU Cores to List
     L_hx = hxdef.get_hx_ser(hxip, hxtoken)
 
     # Get UCS-M Info
@@ -226,14 +227,13 @@ if hxready == True:
 
     rack_servers = handle.query_classid("computeRackUnit")
 
-
     x = 0
     for node in L_hx:
         for compute in rack_servers:
-            if compute.serial == node[0]:
+            if compute.serial == node[1]:
                 #print ("Serials Match: ",compute.serial)
 
-                L_hx[x].extend([compute.model])
+                #L_hx[x].extend([compute.model])
                 L_hx[x].extend([int(compute.num_of_cores_enabled)/int(compute.num_of_cpus)])
 
 
@@ -253,7 +253,6 @@ if hxready == True:
 
 
                 x = x + 1
-
 
     handle.logout()
 
@@ -291,39 +290,37 @@ for vm in json_data:
         # Find name in L_hx table.
         # print (vm.get('name')[8:19])
         for x in L_hx:
-            if x[0] == vm.get('name')[8:19]:
+            if x[1] == vm.get('name')[8:19]:
                 x.append(vm.get("name"))
                 x.append(vm.get("vm"))
                 x.append(False)
 
             # Structure of L_hx
-# [['SerialNumber Node','HX Model','CPU Cores','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
+# [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
-L = hxdef.hx_cvm_ser(hxip,hxtoken)
-print (L)
+
 
 for node in L_hx:
-    print (node)
-    if node[5] == False:
+    if node[8] == False:
         # Is powered of ?
         #             vm_status_power = vm.get("power_state")
         vm_status_power = ""
         if args.force == 'on':
-            poweroff_vm(node[4], vcip)
+            vc.poweroff_vm(node[7],vcip,vcsession)
         else:
             ssh_executed = False
             while ssh_executed == False:
                 input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
-                ssh_executed = shutdown_controller(node[1])
+                ssh_executed = shutdown_controller(node[4])
 
-        print('Waiting for shutdown of : ' + node[2])
+        print('Waiting for shutdown of : ' + node[6])
         print('Please Have Patience and dont abort this script.')
         while vm_status_power != "POWERED_OFF":
             print('.')
             # Get VM Info Again.
             # vmstatus = get_power_vm (vcip, vm.get('vm'))
 
-            vmstatus = get_power_vm(vcip, node[3])
+            vmstatus = vc.get_power_vm(vcip,node[7],vcsession)
             vm_status = json.loads(vmstatus.text)
             vm_status_power = vm_status["value"]["state"]
 
@@ -334,7 +331,7 @@ for node in L_hx:
         # Get number of cpu
 
         # textcpu = get_cpu_vm(vcip, vm.get('vm'))
-        textcpu = get_cpu_vm(vcip, node[3])
+        textcpu = vc.get_cpu_vm(vcip,node[7],vcsession)
 
         cpu_response = json.loads(textcpu.text)
         cpu_json_data = cpu_response["value"]
@@ -343,43 +340,43 @@ for node in L_hx:
         # Change CPU
 
         if enable_boost_mode:
-            update_cpu_vm(vcip, node[3], cpucount + 4)
+            vc.update_cpu_vm(vcip, node[7], cpucount + 4,vcsession)
         else:
-            update_cpu_vm(vcip, node[3], cpucount - 4)
+            vc.update_cpu_vm(vcip, node[7], cpucount - 4,vcsession)
 
-        node[4] = True
+        node[8] = True
 
         # Power On VM
-        poweron_vm(vcip, node[3])
+        vc.poweron_vm(vcip,node[7],vcsession)
 
         # Wait until Powered On
         vm_status_power = "Hello"
-        print('Waiting for Powered On of ' + node[2])
+        print('Waiting for Powered On of ' + node[6])
         print('Please Have Patience and dont abort this script.')
         while vm_status_power != "POWERED_ON":
             # Read VM again
-            vmstatus = get_power_vm(vcip, node[3])
+            vmstatus = vc.get_power_vm(vcip,node[7],vcsession)
             vm_status = json.loads(vmstatus.text)
             vm_status_power = vm_status["value"]["state"]
 
             time.sleep(10)
-        print('VM ' + node[2] + ' is Powered On')
+        print('VM ' + node[6] + ' is Powered On')
 
         # If HX Healthy ?
         print('Waiting for HyperFlex Cluster to become Healthy')
         time.sleep(60)
         # "healthState": "UNKNOWN"
-        hxready = hxstatus(hxip, hxbearer['access_token'], clusteruuid)
+        hxready = hxdef.hxstatus(hxip,hxtoken, clusteruuid)
         while not hxready:
             print('.')
             time.sleep(10)
-            hxready = hxstatus(hxip, hxbearer['access_token'], clusteruuid)
+            hxready = hxdef.hxstatus(hxip,hxtoken, clusteruuid)
         # input("Verify if the HX Cluster is really Healthy !!! Press Enter to continue...")
 
         print('HyperFlex is Healthy again.')
         print('We are repeating these steps until all HX CVM are reconfigured.')
 
-print(' ')
+print()
 if enable_boost_mode == True:
     print("Configure HyperFlex Boost Mode is now finished.")
 else:

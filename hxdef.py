@@ -164,8 +164,6 @@ def get_hx_stcvm (hxip,hxtoken, huuid):
     response = requests.get(url, headers=headers, verify=False)
     hxitem = response.json()
     hxstcvm = hxitem['mgmtIp']['ip']
-    print (hxstcvm)
-
     return hxstcvm
 
 
@@ -183,13 +181,8 @@ def get_hx_ser(hxip,hxtoken):
     c = 0
     L = []
 
-    #hxstcvm = requests.get(url, headers=headers, verify=False)
-    #counter = 0
-    #L = []
-
     for hxitem in response.json():
-        # hxser = (hxitem['serialNumber'])
-        # hxcvmip = (hxitem['nodes']['A']['host']['stctlvm']['mgmtNetworkIp'])  # ['host']['ip']['addr']
+
         huuid = hxitem['identity']['uuid']
         hxmodel = hxitem['modelNumber']
         hxser = hxitem['serialNumber']
@@ -202,18 +195,8 @@ def get_hx_ser(hxip,hxtoken):
         # Get Controller IP.
         L[c].append(get_hx_stcvm(hxip,hxtoken,huuid))
         c = c + 1
-    print (L)
 
-    #hxserial = hx_response['identity']
-
-    #print hxlist
-    #for x in hxlist:
-    #    hxseriallist.append([])
-    #    hxseriallist[c].append(x)
-    #    c = c + 1
-
-    os._exit(1)
-    return hxseriallist
+    return L
 
 # Get the Serial numbers of the nodes.
 def get_hx_ser_old(hxip, hxtoken,hxuuid):
