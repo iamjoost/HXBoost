@@ -42,15 +42,19 @@ or implied.
 # Packages #######
 ##################
 import hxdef
-import vcenterdef as vc
+
 import argparse
 import sys
 import getpass
 import urllib3
 import os
 import textwrap
+import vcenterdef as vc
+import requests
+import json
 
 hxsupportedversion = 4.02
+urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
 
 ##################
 # Functions ######
@@ -127,8 +131,6 @@ def check_arg(args=None):
 ###########################################
 ################## MAIN ###################
 ###########################################
-
-urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
 
 args = check_arg(sys.argv[1:])
 
@@ -208,13 +210,13 @@ else:
 
 # Is HyperFLex cluster Healty ?
 hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
-print ("HyperFlex Cluster is Healthy.")
-if hxready == True:
 
+if hxready == True:
+    print("HyperFlex Cluster is Healthy.")
 
     #Get list with serial numbers
     #Return a list with serial numbers.
-    L_hx = hxdef.get_hx_ser(hxip, hxtoken,clusteruuid)
+    L_hx = hxdef.get_hx_ser(hxip, hxtoken)
 
     # Get UCS-M Info
     from ucsmsdk.ucshandle import UcsHandle
@@ -254,34 +256,34 @@ if hxready == True:
 
 
     handle.logout()
-    print (L_hx)
-    os._exit(1)
 
-    print('HyperFlex is Healthy.')
     print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')
     print('This process will take about 5 min per HyperFlex Node')
-    print(' ')
-    answer = input('Enter yes if you want to continue : ')
-    if answer != 'yes':
-        exit()
+    print()
+    if testing == True:
+        print("Script is going on. Normally you will see a question here.")
+    else:
+        answer = input('Enter yes if you want to continue : ')
+        if answer != 'yes':
+            os._exit(1)
 
 else:
     print('HyperFlex Cluster is NOT HEALTHY!')
     print('Aborting this program.')
-    exit()
+    hxdef.hxexit(testing)
 
 
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
 
 # Get all the VMs
-vms = get_vms(vcip)
+vms = vc.get_vms(vcip,vcsession)
+
 
 # Put the VM in JSON format
 vm_response = json.loads(vms.text)
 json_data = vm_response["value"]
 
 counter = 0
-
 for vm in json_data:
     text = vm.get("name")[0:8]
     # print (text)
@@ -295,20 +297,19 @@ for vm in json_data:
                 x.append(False)
 
             # Structure of L_hx
-# [['SerialNumber Node','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
-# print (L_hx)
+# [['SerialNumber Node','HX Model','CPU Cores','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
+L = hxdef.hx_cvm_ser(hxip,hxtoken)
+print (L)
 
 for node in L_hx:
-    # print (node)
-    # print (node[4])
-
-    if node[4] == False:
+    print (node)
+    if node[5] == False:
         # Is powered of ?
         #             vm_status_power = vm.get("power_state")
         vm_status_power = ""
         if args.force == 'on':
-            poweroff_vm(node[3], vcip)
+            poweroff_vm(node[4], vcip)
         else:
             ssh_executed = False
             while ssh_executed == False:

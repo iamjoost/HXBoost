@@ -1,13 +1,17 @@
 # ---------------------- VMware vCenter ----------------------
+import requests
 
 # Authenticate to vCenter
 def get_vc_session(vcip, username, password):
+    s = requests.Session()
+    s.verify = False
     s.post('https://' + vcip + '/rest/com/vmware/cis/session', auth=(username, password))
+
     return s
 
 
 # Get all VM's running on the vcenter.
-def get_vms(vcip):
+def get_vms(vcip,s):
     vms = s.get('https://' + vcip + '/rest/vcenter/vm')
     return vms
 

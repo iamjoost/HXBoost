@@ -152,9 +152,71 @@ def get_hxstatus(hxip, hxtoken, clusteruuid):
 
     return True
 
+# Get Controller IP
+def get_hx_stcvm (hxip,hxtoken, huuid):
+    # https://10.1.15.13/coreapi/v1/hypervisor/hosts/62d62a1d-14fb-1c46-b44b-f0025d92cea5/controllervm
+    headers = {
+        "Content-type": "application/json",
+        "Authorization": "Bearer " + hxtoken}
+
+    url = 'https://' + hxip + '/coreapi/v1/hypervisor/hosts/' + huuid + '/controllervm'
+
+    response = requests.get(url, headers=headers, verify=False)
+    hxitem = response.json()
+    hxstcvm = hxitem['mgmtIp']['ip']
+    print (hxstcvm)
+
+    return hxstcvm
+
+
+
+# Get the serial, model, huuid of the nodes
+def get_hx_ser(hxip,hxtoken):
+    # https://10.1.15.13/coreapi/v1/hypervisor/hosts
+    headers = {
+        "Content-type": "application/json",
+        "Authorization": "Bearer " + hxtoken}
+
+    url = 'https://' + hxip + '/coreapi/v1/hypervisor/hosts'
+
+    response = requests.get(url, headers=headers, verify=False)
+    c = 0
+    L = []
+
+    #hxstcvm = requests.get(url, headers=headers, verify=False)
+    #counter = 0
+    #L = []
+
+    for hxitem in response.json():
+        # hxser = (hxitem['serialNumber'])
+        # hxcvmip = (hxitem['nodes']['A']['host']['stctlvm']['mgmtNetworkIp'])  # ['host']['ip']['addr']
+        huuid = hxitem['identity']['uuid']
+        hxmodel = hxitem['modelNumber']
+        hxser = hxitem['serialNumber']
+        hxstatus = hxitem['status']
+        L.append([])
+        L[c].append(huuid)
+        L[c].append(hxser)
+        L[c].append(hxmodel)
+        L[c].append(hxstatus)
+        # Get Controller IP.
+        L[c].append(get_hx_stcvm(hxip,hxtoken,huuid))
+        c = c + 1
+    print (L)
+
+    #hxserial = hx_response['identity']
+
+    #print hxlist
+    #for x in hxlist:
+    #    hxseriallist.append([])
+    #    hxseriallist[c].append(x)
+    #    c = c + 1
+
+    os._exit(1)
+    return hxseriallist
 
 # Get the Serial numbers of the nodes.
-def get_hx_ser(hxip, hxtoken,hxuuid):
+def get_hx_ser_old(hxip, hxtoken,hxuuid):
     # https://10.1.15.13/coreapi/v1/clusters/1525837625288471367%3A5577340641586887964/about
     headers = {
         "Content-type": "application/json",
@@ -177,3 +239,27 @@ def get_hx_ser(hxip, hxtoken,hxuuid):
 
     return hxseriallist
 
+def hx_cvm_ip(hxip, hxtoken,nuuid):
+    # https://10.1.15.13/coreapi/v1/hypervisor/controllervms
+
+
+    headers = {
+        "Content-type": "application/json",
+        "Authorization": "Bearer " + hxtoken}
+
+    url = 'https://' + hxip + '/coreapi/v1/hypervisor/controllervms'
+
+    hxstcvm = requests.get(url, headers=headers, verify=False)
+    counter = 0
+    L = []
+
+    for hxitem in hxstcvm.json():
+        #hxser = (hxitem['serialNumber'])
+        #hxcvmip = (hxitem['nodes']['A']['host']['stctlvm']['mgmtNetworkIp'])  # ['host']['ip']['addr']
+        hxcvmip = hxitem['mgmtIp']['ip']
+        L.append([])
+        #L[counter].append(hxser)
+        L[counter].append(hxcvmip)
+        counter = counter + 1
+
+    return L
