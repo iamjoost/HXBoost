@@ -16,7 +16,8 @@ THIS SCRIPT IS NOT IDIOT PROOF
 
 --FORCE ON will Power Off the HX CVM ! Use with Caution.
 --tesst True will test the script, ignore the warnings and it WON'T update the stCVM.
-
+--vceam off : If this a Fresh HX 4.0 installation, ESXi Agent Manager is configured for the stCVM.
+              If not sure, leave it to on
 
 Author: Joost van der Made
 Email: awesome@iamjoost.com
@@ -63,12 +64,12 @@ urllib3.disable_warnings()  # Disable warnings when you're not working with cert
 ##################
 
 # -------------------- SSH -----------------------
+# TODO When SecureShell is enabled, SSH with Root is NOT possible anymore.
+# TODO Use PyVomi to disable EAM.
 
 # SSH into HX Controller and shutdown the system.
 def shutdown_controller(cip):
-    # os.system('ssh root@'+cip+' shutdown -P now')
     my_timeout = 100  # Seconds
-    # os.system('ssh root@'+cip+' shutdown -P now')
     p = subprocess.Popen(['ssh', 'root@' + cip, ' shutdown', '-P', 'now'])
     try:
         p.wait(my_timeout)
@@ -256,22 +257,13 @@ else:
     for node in L_hx:
         for compute in rack_servers:
             if compute.serial == node[1]:
-                # print ("Serials Match: ",compute.serial)
-
-                # L_hx[x].extend([compute.model])
                 L_hx[x].extend([int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)])
-
                 hxmodel = hxdef.hx_in_list(compute.model)
                 # hxmodel[0] = 1 for All Flash, 2 for All NVMe
                 # hxmodel[1] = Number of cores needed.
 
                 if hxmodel[0] >= 1:
                     CoresPerCPU = int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)
-
-                    ######################################################################
-                    ########################## T E S T T I N G ###########################
-                    CoresPerCPU = 12
-                    ######################################################################
 
                     if CoresPerCPU < hxmodel[1]:
                         print("CPU don't have enough cores. Minimum of",hxmodel[1],"cores per CPU required.")
@@ -297,8 +289,6 @@ else:
             answer = input('Enter yes if you want to continue : ')
             if answer != 'yes':
                 os._exit(1)
-
-
 
 print('Please Have Patience and dont abort this script.')
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
@@ -338,8 +328,6 @@ for node in L_hx:
         if (cpucount == hxmodel[1]) and (enable_boost_mode is True):
             print("HyperFlex Boost is already Enabled.")
             os._exit(1)
-#        else:
-#            print("HX Boost Not Enabled Yet")
 
         vm_status_power = ""
         if testing:
@@ -357,14 +345,10 @@ for node in L_hx:
                         input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
                         ssh_executed = shutdown_controller(node[4])
 
-
-
         print('Waiting for shutdown of : ' + node[6])
         while (vm_status_power != "POWERED_OFF") and testing == False:
             print('.'),
             # Get VM Info Again.
-            # vmstatus = get_power_vm (vcip, vm.get('vm'))
-
             vmstatus = vc.get_power_vm(vcip, node[7], vcsession)
             vm_status = json.loads(vmstatus.text)
             vm_status_power = vm_status["value"]["state"]
@@ -378,15 +362,6 @@ for node in L_hx:
         if testing:
             print("Fake changing vCPUs of Storage Controller.")
         else:
-            # Get number of cpu
-
-            # textcpu = get_cpu_vm(vcip, vm.get('vm'))
-            # textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
-            #
-            # cpu_response = json.loads(textcpu.text)
-            # cpu_json_data = cpu_response["value"]
-            # cpucount = (cpu_json_data['count'])
-            #
             if enable_boost_mode:
                 vc.update_cpu_vm(vcip, node[7], cpucount + 4, vcsession)
             else:
