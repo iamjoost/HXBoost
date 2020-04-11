@@ -1,3 +1,4 @@
+#TODO Read SupportedHXModels.json and fill in the correct supported models.
 """
 HyperFlex Boost mode Script
 
