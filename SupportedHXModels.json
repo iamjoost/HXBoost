@@ -1,4 +1,6 @@
 {
+  "AllFlashCores" : 12,
+  "AllNVMeCores" : 16,
   "hxallflash": [
                   "HXAF220C-M5SX",
                   "HXAF240C-M5SX"

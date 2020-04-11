@@ -124,6 +124,9 @@ def check_arg(args=None):
     parser.add_argument('--hxtoken',
                         help='HyperFlex API Token'
                         )
+    parser.add_argument('--vceam',
+                        help='Is EAM Running'
+                        )
     parser.add_argument('--test',
                         help='Test the script without doing it. When set to "true" the script will run and not change the vCPUs.'
                         )
@@ -157,6 +160,7 @@ hxtoken = args.hxtoken
 ucsmip = args.ucsmip
 ucsmuser = args.ucsmuser
 ucsmpasswd = args.ucsmpasswd
+vceam = False
 
 if args.hxip == None:
     hxip = input("HyperFlex IP Address: ")
@@ -184,6 +188,9 @@ if args.hxboost == 'on':
 else:
     enable_boost_mode = False
 
+if args.vceam = 'yes':
+    vceam = True
+
 if args.test == 'true':
     testing = True
 else:
@@ -198,7 +205,7 @@ if args.hxtoken == None:
 #Get HX CLuster UUID
 clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
 
-#TODO Get the HX Version
+# Get the HX Version
 hxversion = hxdef.get_hxversion(hxip,hxtoken,clusteruuid)
 
 hxversion2 = hxversion[:3]
@@ -298,26 +305,42 @@ for vm in json_data:
                 x.append(vm.get("vm"))
                 x.append(False)
 
-            # Structure of L_hx
+# Structure of L_hx
 # [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
 
 
 for node in L_hx:
     if node[8] == False:
+        #TODO Don't power off controller vm if Testing = True
         # Is powered of ?
         #             vm_status_power = vm.get("power_state")
-        vm_status_power = ""
-        if args.force == 'on':
-            vc.poweroff_vm(node[7],vcip,vcsession)
+
+        # TODO See if EAM is activated. If not then PowerOff vm ?
+        #TODO Chech how many CPU controller has.
+        textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
+        print ("Number of vCPUs",textcpu)
+
+        if testing:
+            print ("Fake power off of the Storage Controller.")
+            pass # Do not power off
         else:
-            ssh_executed = False
-            while ssh_executed == False:
-                input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
-                ssh_executed = shutdown_controller(node[4])
+            vm_status_power = ""
+            if args.force == 'on':
+                vc.poweroff_vm(node[7], vcip, vcsession)
+            else:
+                # TODO If no EAM try : vc.shutdownvm(vcip, vmid,vcsession)
+                ssh_executed = False
+                while ssh_executed == False:
+                    input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
+                    ssh_executed = shutdown_controller(node[4])
+
+
+
 
         print('Waiting for shutdown of : ' + node[6])
         print('Please Have Patience and dont abort this script.')
+
         while vm_status_power != "POWERED_OFF":
             print('.')
             # Get VM Info Again.
@@ -341,16 +364,20 @@ for node in L_hx:
         cpucount = (cpu_json_data['count'])
 
         # Change CPU
-
-        if enable_boost_mode:
-            vc.update_cpu_vm(vcip, node[7], cpucount + 4,vcsession)
+        if testing:
+            print ("Fake changing vCPUs of Storage Controller.")
         else:
-            vc.update_cpu_vm(vcip, node[7], cpucount - 4,vcsession)
+            if enable_boost_mode:
+                vc.update_cpu_vm(vcip, node[7], cpucount + 4, vcsession)
+            else:
+                vc.update_cpu_vm(vcip, node[7], cpucount - 4, vcsession)
 
-        node[8] = True
+            node[8] = True
 
-        # Power On VM
-        vc.poweron_vm(vcip,node[7],vcsession)
+            # Power On VM
+            vc.poweron_vm(vcip, node[7], vcsession)
+
+
 
         # Wait until Powered On
         vm_status_power = "Hello"

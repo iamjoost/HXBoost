@@ -21,7 +21,6 @@ def get_vms(vcip,s):
 
 def shutdownvm(vcip, vmid,s):
     s.post('https://' + vcip + '/rest/vcenter/vm/' + vmid + '/guest/power?action=shutdown')
-    # Todo failure or not ?
 
 
 # Power On the VM
