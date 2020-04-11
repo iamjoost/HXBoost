@@ -98,8 +98,7 @@ def check_arg(args=None):
     parser.add_argument('--hxuser',
                         help='HyperFlex UserName')
     parser.add_argument('--vcuser',
-                        help='vCenter UserName',
-                        default='administrator@vsphere.local')
+                        help='vCenter UserName')
     parser.add_argument('--vcpasswd',
                         help='vCenter Password'
                         )
@@ -107,8 +106,7 @@ def check_arg(args=None):
                         help='vCenter IP Address'
                         )
     parser.add_argument('--ucsmuser',
-                        help='UCS-M Username',
-                        default='admin')
+                        help='UCS-M Username')
 
     parser.add_argument('--ucsmpasswd',
                         help='UCS-M Password'
@@ -134,6 +132,7 @@ def check_arg(args=None):
                         )
     parser.add_argument('--test',
                         choices=['true','false'],
+                        default='false',
                         help='Test the script without doing it. When set to "true" the script will run and not change the vCPUs.'
                         )
     return parser.parse_args(args)
@@ -178,6 +177,12 @@ if args.hxuser == None:
 if args.hxpasswd == None:
     hxpasswd = getpass.getpass("Please enter the HyperFlex Password: ")
 
+if args.vcip == None:
+    vcip= input("vCenter IP Address: ")
+
+if args.vcuser == None:
+    vcuser = input("HyperFlex UserName: ")
+
 if args.vcpasswd == None:
     vcpasswd = getpass.getpass("Please enter the vCenter Password: ")
 
@@ -208,8 +213,8 @@ else:
 if args.hxtoken == None:
     # Get the Token.
     hxbearer = hxdef.get_hxtoken(hxip, hxuser, hxpasswd).json()
-    print(hxbearer)
     hxtoken = hxbearer['access_token']
+    print ('HX Token: ',hxtoken)
 
 # Get HX CLuster UUID
 clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
