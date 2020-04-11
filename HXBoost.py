@@ -52,6 +52,7 @@ import textwrap
 import vcenterdef as vc
 import json
 import time
+import subprocess
 
 hxsupportedversion = 4.02
 urllib3.disable_warnings()  # Disable warnings when you're not working with certificates.
@@ -116,8 +117,10 @@ def check_arg(args=None):
                         help='UCS-M IP Address'
                         )
     parser.add_argument('--hxboost',
+                        choices=['on','off'],
                         help='HyperFlex Boostmode on / off',
-                        default='on')
+                        required='True'
+                        )
     parser.add_argument('--force',
                         help='Force power off : on / off',
                         default='off')
@@ -125,9 +128,12 @@ def check_arg(args=None):
                         help='HyperFlex API Token'
                         )
     parser.add_argument('--vceam',
+                        choices=['yes','no'],
+                        default='yes',
                         help='Is EAM Running'
                         )
     parser.add_argument('--test',
+                        choices=['true','false'],
                         help='Test the script without doing it. When set to "true" the script will run and not change the vCPUs.'
                         )
     return parser.parse_args(args)
@@ -161,7 +167,7 @@ hxtoken = args.hxtoken
 ucsmip = args.ucsmip
 ucsmuser = args.ucsmuser
 ucsmpasswd = args.ucsmpasswd
-vceam = True
+
 
 if args.hxip == None:
     hxip = input("HyperFlex IP Address: ")
@@ -191,6 +197,8 @@ else:
 
 if args.vceam == 'no':
     vceam = False
+else:
+    vceam = True
 
 if args.test == 'true':
     testing = True
@@ -260,10 +268,7 @@ else:
                     CoresPerCPU = 12
                     ######################################################################
 
-                    if CoresPerCPU >= hxmodel[1]:
-                        #print("Over ", hxmodel[1], " Cores. ", compute.num_of_cores_enabled)
-                        pass
-                    else:
+                    if CoresPerCPU < hxmodel[1]:
                         print("CPU don't have enough cores. Minimum of",hxmodel[1],"cores per CPU required.")
                         hxdef.hxexit(testing)
                 else:
@@ -317,21 +322,19 @@ for vm in json_data:
 # Structure of L_hx
 # [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
-
 for node in L_hx:
     vmid = node[7]
     if node[8] == False:
-        # TODO See if EAM is activated. If not then PowerOff vm ?
         textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
         cpu_response = json.loads(textcpu.text)
         cpu_json_data = cpu_response["value"]
         cpucount = (cpu_json_data['count'])
         # Is system All Flash or All NVMe ?
-        if cpucount == hxmodel[1]:
+        if (cpucount == hxmodel[1]) and (enable_boost_mode is True):
             print("HyperFlex Boost is already Enabled.")
             os._exit(1)
-        else:
-            print("HX Boost Not Enabled Yet")
+#        else:
+#            print("HX Boost Not Enabled Yet")
 
         vm_status_power = ""
         if testing:
@@ -353,7 +356,7 @@ for node in L_hx:
 
         print('Waiting for shutdown of : ' + node[6])
         while (vm_status_power != "POWERED_OFF") and testing == False:
-            print('.')
+            print('.'),
             # Get VM Info Again.
             # vmstatus = get_power_vm (vcip, vm.get('vm'))
 
@@ -410,7 +413,7 @@ for node in L_hx:
             time.sleep(30)
         hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         while not hxready:
-            print('.')
+            print('.'),
             if not testing:
                 time.sleep(10)
             hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
