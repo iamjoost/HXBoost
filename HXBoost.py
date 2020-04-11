@@ -50,12 +50,12 @@ import urllib3
 import os
 import textwrap
 import vcenterdef as vc
-import requests
 import json
 import time
 
 hxsupportedversion = 4.02
-urllib3.disable_warnings() #Disable warnings when you're not working with certificates.
+urllib3.disable_warnings()  # Disable warnings when you're not working with certificates.
+
 
 ##################
 # Functions ######
@@ -82,7 +82,7 @@ def shutdown_controller(cip):
 
 # Getting the parameters
 def check_arg(args=None):
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=textwrap.dedent('''\
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description=textwrap.dedent('''\
          *****************   DISCLAIMER   ********************
          Please read the readme.txt regarding limitations of this script.
          Use this script at your own risk.
@@ -132,6 +132,7 @@ def check_arg(args=None):
                         )
     return parser.parse_args(args)
 
+
 ###########################################
 ################## MAIN ###################
 ###########################################
@@ -148,7 +149,7 @@ print()
 print("If you don't have a cluster with the required hardware and software, the script cannot run.")
 print()
 print("Use this script on your own responsibility. To test the script use the argument: --test true")
-print ()
+print()
 
 hxip = args.hxip
 hxuser = args.hxuser
@@ -160,7 +161,7 @@ hxtoken = args.hxtoken
 ucsmip = args.ucsmip
 ucsmuser = args.ucsmuser
 ucsmpasswd = args.ucsmpasswd
-vceam = False
+vceam = True
 
 if args.hxip == None:
     hxip = input("HyperFlex IP Address: ")
@@ -188,8 +189,8 @@ if args.hxboost == 'on':
 else:
     enable_boost_mode = False
 
-if args.vceam = 'yes':
-    vceam = True
+if args.vceam == 'no':
+    vceam = False
 
 if args.test == 'true':
     testing = True
@@ -199,14 +200,14 @@ else:
 if args.hxtoken == None:
     # Get the Token.
     hxbearer = hxdef.get_hxtoken(hxip, hxuser, hxpasswd).json()
-    print (hxbearer)
+    print(hxbearer)
     hxtoken = hxbearer['access_token']
 
-#Get HX CLuster UUID
+# Get HX CLuster UUID
 clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
 
 # Get the HX Version
-hxversion = hxdef.get_hxversion(hxip,hxtoken,clusteruuid)
+hxversion = hxdef.get_hxversion(hxip, hxtoken, clusteruuid)
 
 hxversion2 = hxversion[:3]
 hxversion2 = hxversion2 + hxversion[4]
@@ -220,18 +221,20 @@ else:
 # Is HyperFLex cluster Healty ?
 hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
 
-if hxready == True:
+if hxready is False:
+    print('HyperFlex Cluster is NOT HEALTHY!')
+    print('Aborting this program.')
+    os._exit(1)
+else:
     print("HyperFlex Cluster is Healthy.")
 
-    #Get list with serial numbers
-    #Return a list with [huuid, hx serial number, model, status, stcvm ip],[]
-    # TODO Add CPU Cores to List
+    # Get list with serial numbers
     L_hx = hxdef.get_hx_ser(hxip, hxtoken)
 
     # Get UCS-M Info
     from ucsmsdk.ucshandle import UcsHandle
 
-    handle = UcsHandle(ucsmip,ucsmuser,ucsmpasswd)
+    handle = UcsHandle(ucsmip, ucsmuser, ucsmpasswd)
     handle.login()
 
     rack_servers = handle.query_classid("computeRackUnit")
@@ -240,52 +243,58 @@ if hxready == True:
     for node in L_hx:
         for compute in rack_servers:
             if compute.serial == node[1]:
-                #print ("Serials Match: ",compute.serial)
+                # print ("Serials Match: ",compute.serial)
 
-                #L_hx[x].extend([compute.model])
-                L_hx[x].extend([int(compute.num_of_cores_enabled)/int(compute.num_of_cpus)])
-
+                # L_hx[x].extend([compute.model])
+                L_hx[x].extend([int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)])
 
                 hxmodel = hxdef.hx_in_list(compute.model)
                 # hxmodel[0] = 1 for All Flash, 2 for All NVMe
                 # hxmodel[1] = Number of cores needed.
 
                 if hxmodel[0] >= 1:
-                    if int(compute.num_of_cores_enabled) / int(compute.num_of_cpus) >= hxmodel[1]:
-                        print("Over ",hxmodel[1]," Cores. ", compute.num_of_cores_enabled)
+                    CoresPerCPU = int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)
+
+                    ######################################################################
+                    ########################## T E S T T I N G ###########################
+                    CoresPerCPU = 12
+                    ######################################################################
+
+                    if CoresPerCPU >= hxmodel[1]:
+                        #print("Over ", hxmodel[1], " Cores. ", compute.num_of_cores_enabled)
+                        pass
                     else:
-                        print("CPU don't have enough cores.")
+                        print("CPU don't have enough cores. Minimum of",hxmodel[1],"cores per CPU required.")
                         hxdef.hxexit(testing)
                 else:
-                    print ("This is not an HX All-Flash or HX All-NVMe cluster")
+                    print("This is not an HX All-Flash or HX All-NVMe cluster")
                     hxdef.hxexit(testing)
-
 
                 x = x + 1
 
     handle.logout()
+    print("This is a HyperFlex All-Flash or All-NVMe Cluster.")
 
-    print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')
-    print('This process will take about 5 min per HyperFlex Node')
-    print()
-    if testing == True:
-        print("Script is going on. Normally you will see a question here.")
+    if vceam is False:
+        pass
     else:
-        answer = input('Enter yes if you want to continue : ')
-        if answer != 'yes':
-            os._exit(1)
+        print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')
+        print('This process will take about 5 min per HyperFlex Node')
+        print()
+        if testing == True:
+            print("Script is going on. Normally you will see a question here.")
+        else:
+            answer = input('Enter yes if you want to continue : ')
+            if answer != 'yes':
+                os._exit(1)
 
-else:
-    print('HyperFlex Cluster is NOT HEALTHY!')
-    print('Aborting this program.')
-    hxdef.hxexit(testing)
 
 
+print('Please Have Patience and dont abort this script.')
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
 
 # Get all the VMs
-vms = vc.get_vms(vcip,vcsession)
-
+vms = vc.get_vms(vcip, vcsession)
 
 # Put the VM in JSON format
 vm_response = json.loads(vms.text)
@@ -309,64 +318,67 @@ for vm in json_data:
 # [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
 
-
 for node in L_hx:
+    vmid = node[7]
     if node[8] == False:
-        #TODO Don't power off controller vm if Testing = True
-        # Is powered of ?
-        #             vm_status_power = vm.get("power_state")
-
         # TODO See if EAM is activated. If not then PowerOff vm ?
-        #TODO Chech how many CPU controller has.
         textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
-        print ("Number of vCPUs",textcpu)
-
-        if testing:
-            print ("Fake power off of the Storage Controller.")
-            pass # Do not power off
+        cpu_response = json.loads(textcpu.text)
+        cpu_json_data = cpu_response["value"]
+        cpucount = (cpu_json_data['count'])
+        # Is system All Flash or All NVMe ?
+        if cpucount == hxmodel[1]:
+            print("HyperFlex Boost is already Enabled.")
+            os._exit(1)
         else:
-            vm_status_power = ""
+            print("HX Boost Not Enabled Yet")
+
+        vm_status_power = ""
+        if testing:
+            print("Fake power off of the Storage Controller.")
+
+        else:
             if args.force == 'on':
                 vc.poweroff_vm(node[7], vcip, vcsession)
             else:
-                # TODO If no EAM try : vc.shutdownvm(vcip, vmid,vcsession)
-                ssh_executed = False
-                while ssh_executed == False:
-                    input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
-                    ssh_executed = shutdown_controller(node[4])
-
+                if vceam is False:
+                    vc.shutdownvm(vcip, vmid,vcsession)
+                else:
+                    ssh_executed = False
+                    while ssh_executed == False:
+                        input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
+                        ssh_executed = shutdown_controller(node[4])
 
 
 
         print('Waiting for shutdown of : ' + node[6])
-        print('Please Have Patience and dont abort this script.')
-
-        while vm_status_power != "POWERED_OFF":
+        while (vm_status_power != "POWERED_OFF") and testing == False:
             print('.')
             # Get VM Info Again.
             # vmstatus = get_power_vm (vcip, vm.get('vm'))
 
-            vmstatus = vc.get_power_vm(vcip,node[7],vcsession)
+            vmstatus = vc.get_power_vm(vcip, node[7], vcsession)
             vm_status = json.loads(vmstatus.text)
             vm_status_power = vm_status["value"]["state"]
 
-            time.sleep(10)
+            if not testing:
+                time.sleep(10)
 
         print('VM is Powered Off')
 
-        # Get number of cpu
-
-        # textcpu = get_cpu_vm(vcip, vm.get('vm'))
-        textcpu = vc.get_cpu_vm(vcip,node[7],vcsession)
-
-        cpu_response = json.loads(textcpu.text)
-        cpu_json_data = cpu_response["value"]
-        cpucount = (cpu_json_data['count'])
-
         # Change CPU
         if testing:
-            print ("Fake changing vCPUs of Storage Controller.")
+            print("Fake changing vCPUs of Storage Controller.")
         else:
+            # Get number of cpu
+
+            # textcpu = get_cpu_vm(vcip, vm.get('vm'))
+            # textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
+            #
+            # cpu_response = json.loads(textcpu.text)
+            # cpu_json_data = cpu_response["value"]
+            # cpucount = (cpu_json_data['count'])
+            #
             if enable_boost_mode:
                 vc.update_cpu_vm(vcip, node[7], cpucount + 4, vcsession)
             else:
@@ -377,37 +389,38 @@ for node in L_hx:
             # Power On VM
             vc.poweron_vm(vcip, node[7], vcsession)
 
-
-
         # Wait until Powered On
         vm_status_power = "Hello"
         print('Waiting for Powered On of ' + node[6])
         print('Please Have Patience and dont abort this script.')
         while vm_status_power != "POWERED_ON":
             # Read VM again
-            vmstatus = vc.get_power_vm(vcip,node[7],vcsession)
+            vmstatus = vc.get_power_vm(vcip, node[7], vcsession)
             vm_status = json.loads(vmstatus.text)
             vm_status_power = vm_status["value"]["state"]
 
-            time.sleep(10)
+            if not testing:
+                time.sleep(10)
         print('VM ' + node[6] + ' is Powered On')
 
         # If HX Healthy ?
         print('Waiting for HyperFlex Cluster to become Healthy')
-        time.sleep(60)
-        # "healthState": "UNKNOWN"
-        hxready = hxdef.hxstatus(hxip,hxtoken, clusteruuid)
+
+        if not testing:
+            time.sleep(30)
+        hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         while not hxready:
             print('.')
-            time.sleep(10)
-            hxready = hxdef.hxstatus(hxip,hxtoken, clusteruuid)
+            if not testing:
+                time.sleep(10)
+            hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         # input("Verify if the HX Cluster is really Healthy !!! Press Enter to continue...")
 
         print('HyperFlex is Healthy again.')
         print('We are repeating these steps until all HX CVM are reconfigured.')
 
 print()
-if enable_boost_mode == True:
+if enable_boost_mode is True:
     print("Configure HyperFlex Boost Mode is now finished.")
 else:
     print('Disable HyperFlex Boost Mode is now finished.')
