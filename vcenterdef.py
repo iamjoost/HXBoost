@@ -64,7 +64,7 @@ def prompt(message, inputType):
             print('Field cannot be empty')
     return t
 
-def eam_enabled(vcip,vcsession,hxserial):
+def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
     ###########################################################################
     try:
         _create_unverified_https_context = ssl._create_unverified_context
@@ -85,16 +85,15 @@ def eam_enabled(vcip,vcsession,hxserial):
     #     vc_url, cluster_id = getURL()
     # except:
     #     vc_url = '10.1.15.12'  # prompt("Enter vCenter URL:  ", 'text')
-    #     # TODO Find CLuster ID
-    #     cluster_id = 'domain-c336'  # prompt("Enter vCenter Cluster DomainID (mob):  ", 'text')
+    #     #     cluster_id = 'domain-c336'  # prompt("Enter vCenter Cluster DomainID (mob):  ", 'text')
     #     # cluster_id = 'group-d1'  # prompt("Enter vCenter Cluster DomainID (mob):  ", 'text')
     #     print("Connecting to VC {}".format(vc_url))
 
     while True:
 
         vc_url = vcip #print("vCenter URL: {}".format(vc_url))
-        vc_user = 'administrator@vsphere.local'  # prompt("Enter vCenter username (user@domain): ", 'text')
-        vc_pwd = 'Hyp3rFlex123!'  # getpass.getpass('vCenter Password: ')
+        vc_user = vcuser #'administrator@vsphere.local'  # prompt("Enter vCenter username (user@domain): ", 'text')
+        vc_pwd = vcpasswd #'Hyp3rFlex123!'  # getpass.getpass('vCenter Password: ')
 
         try:
             si = connect.SmartConnect(host=vc_url, user=vc_user, pwd=vc_pwd)
@@ -109,9 +108,6 @@ def eam_enabled(vcip,vcsession,hxserial):
     #vcsession = vc.get_vc_session(vc_url, vc_user, vc_pwd)
 
     cluster_id = get_cluster_id(vc_url, vcsession)
-    print(cluster_id)
-
-    # print (si.content.rootFolder)
 
     container = si.content.viewManager.CreateContainerView(si.content.rootFolder, [vim.ClusterComputeResource], True)
     for c in container.view:
@@ -119,17 +115,14 @@ def eam_enabled(vcip,vcsession,hxserial):
         # if c._moId == cluster_id:
         if c._moId in cluster_id:
             for host in c.host:
-                # print (host)
                 stCtlVMs = [v for v in host.vm if stCtlVMName in v.name.upper()]
-                if len(stCtlVMs) > 1:
-                    raise Exception("More than one stCtlVMs found: %s" % stCtlVMs)
-
                 eamStatus = 'Yes' if stCtlVMs[0].summary.config.managedBy else 'No'
-                print("{} - EAM Enabled: {}".format(stCtlVMs[0].name, eamStatus))
-    if eamStatus == "No":
-        return False
-    else:
-        return True
+                if (eamStatus == 'No') and (hxserial == stCtlVMs[0].name[-11:]):
+                    #print ("No eamStatus of: ", stCtlVMs[0].name)
+                    return False
+
+
+    return True
 
 
 # Shutdown Guest OS VM <- IS NOT WORKING If EAM is enabled. How to check ???

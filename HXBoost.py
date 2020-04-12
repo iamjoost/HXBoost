@@ -1,4 +1,6 @@
-#TODO VC Authentication failed !
+#TODO HX Boost Off verify.
+# TODO vceam set if EAM is enabled.
+
 """
 HyperFlex Boost mode Script
 
@@ -16,7 +18,7 @@ You can change this script to have it working anyway you want.
 THIS SCRIPT IS NOT IDIOT PROOF
 
 --FORCE ON will Power Off the HX CVM ! Use with Caution.
---tesst True will test the script, ignore the warnings and it WON'T update the stCVM.
+--test True will test the script, ignore the warnings and it WON'T update the stCVM.
 --vceam off : If this a Fresh HX 4.0 installation, ESXi Agent Manager is configured for the stCVM.
               If not sure, leave it to on
 
@@ -127,11 +129,11 @@ def check_arg(args=None):
     parser.add_argument('--hxtoken',
                         help='HyperFlex API Token'
                         )
-    parser.add_argument('--vceam',
-                        choices=['yes','no'],
-                        default='yes',
-                        help='Is EAM Running'
-                        )
+    # parser.add_argument('--vceam',
+    #                     choices=['yes','no'],
+    #                     default='yes',
+    #                     help='Is EAM Running'
+    #                     )
     parser.add_argument('--test',
                         choices=['true','false'],
                         default='false',
@@ -201,13 +203,14 @@ if args.hxboost == 'on':
 else:
     enable_boost_mode = False
 
-if args.vceam == 'no':
-    vceam = False
-else:
-    vceam = True
+# if args.vceam == 'no':
+#     vceam = False
+# else:
+#     vceam = True
 
 if args.test == 'true':
     testing = True
+    print ("This script will run in Testing mode. VMs will not be powered off. HX Boost will not be enabled.")
 else:
     testing = False
 
@@ -265,6 +268,8 @@ else:
                 if hxmodel[0] >= 1:
                     CoresPerCPU = int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)
 
+########################### TESTING ######################
+                    CoresPerCPU = 12
                     if CoresPerCPU < hxmodel[1]:
                         print("CPU don't have enough cores. Minimum of",hxmodel[1],"cores per CPU required.")
                         hxdef.hxexit(testing)
@@ -277,18 +282,16 @@ else:
     handle.logout()
     print("This is a HyperFlex All-Flash or All-NVMe Cluster.")
 
-    if vceam is False:
-        pass
+    print ('If ESXi Agent Manager is running for HyperFLex:')
+    print('You will need to provide the HyperFlex Controller VM passwords when the script is running')
+    print('This process will take about 5 min per HyperFlex Node')
+    print()
+    if testing == True:
+        print("Script is going on. Normally you will see a question here.")
     else:
-        print('You will still need to provide the HyperFlex Controller VM passwords when the script is running')
-        print('This process will take about 5 min per HyperFlex Node')
-        print()
-        if testing == True:
-            print("Script is going on. Normally you will see a question here.")
-        else:
-            answer = input('Enter yes if you want to continue : ')
-            if answer != 'yes':
-                os._exit(1)
+        answer = input('Enter yes if you want to continue : ')
+        if answer != 'yes':
+            os._exit(1)
 
 print('Please Have Patience and dont abort this script.')
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
@@ -317,21 +320,17 @@ for vm in json_data:
 # Structure of L_hx
 # [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
+vceam = True
+
 for node in L_hx:
     vmid = node[7]
     if node[8] == False:
         #TODO Loop for all servers
+
         hxserial=node[1]
-        print ("Serial: ",hxserial)
-        if vc.eam_enabled(vcip,vcsession,hxserial):
-            print ("EAM Enabled.")
-        else:
-            print ("No EAM")
-
-        os._exit(1)
-
-
-#############
+        if vceam is True:
+            if not vc.eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
+                vceam = False
         textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
         cpu_response = json.loads(textcpu.text)
         cpu_json_data = cpu_response["value"]
@@ -340,6 +339,11 @@ for node in L_hx:
         if (cpucount == hxmodel[1]) and (enable_boost_mode is True):
             print("HyperFlex Boost is already Enabled.")
             os._exit(1)
+
+        if (cpucount == (hxmodel[1]-4)) and (enable_boost_mode is False):
+            print ("HyperFlex Boost is not configured. You cannot disable it.")
+            os._exit(1)
+
 
         vm_status_power = ""
         if testing:
