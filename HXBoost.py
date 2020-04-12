@@ -1,5 +1,4 @@
-#TODO HX Boost Off verify.
-# TODO vceam set if EAM is enabled.
+#TODO SSH Shutdown is for ROOT only !
 
 """
 HyperFlex Boost mode Script
@@ -17,10 +16,8 @@ Earlier HXDP of 4.0.2a are not supported.
 You can change this script to have it working anyway you want.
 THIS SCRIPT IS NOT IDIOT PROOF
 
---FORCE ON will Power Off the HX CVM ! Use with Caution.
+--FORCE ON will Power Off the HX CVM not gracefully! Use with Caution.
 --test True will test the script, ignore the warnings and it WON'T update the stCVM.
---vceam off : If this a Fresh HX 4.0 installation, ESXi Agent Manager is configured for the stCVM.
-              If not sure, leave it to on
 
 Author: Joost van der Made
 Email: awesome@iamjoost.com
@@ -68,7 +65,6 @@ urllib3.disable_warnings()  # Disable warnings when you're not working with cert
 
 # -------------------- SSH -----------------------
 # TODO When SecureShell is enabled, SSH with Root is NOT possible anymore.
-# TODO Use PyVomi to disable EAM.
 
 # SSH into HX Controller and shutdown the system.
 def shutdown_controller(cip):
@@ -282,17 +278,6 @@ else:
     handle.logout()
     print("This is a HyperFlex All-Flash or All-NVMe Cluster.")
 
-    print ('If ESXi Agent Manager is running for HyperFLex:')
-    print('You will need to provide the HyperFlex Controller VM passwords when the script is running')
-    print('This process will take about 5 min per HyperFlex Node')
-    print()
-    if testing == True:
-        print("Script is going on. Normally you will see a question here.")
-    else:
-        answer = input('Enter yes if you want to continue : ')
-        if answer != 'yes':
-            os._exit(1)
-
 print('Please Have Patience and dont abort this script.')
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
 
@@ -331,6 +316,7 @@ for node in L_hx:
         if vceam is True:
             if not vc.eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
                 vceam = False
+
         textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
         cpu_response = json.loads(textcpu.text)
         cpu_json_data = cpu_response["value"]
@@ -344,7 +330,6 @@ for node in L_hx:
             print ("HyperFlex Boost is not configured. You cannot disable it.")
             os._exit(1)
 
-
         vm_status_power = ""
         if testing:
             print("Fake power off of the Storage Controller.")
@@ -356,6 +341,20 @@ for node in L_hx:
                 if vceam is False:
                     vc.shutdownvm(vcip, vmid,vcsession)
                 else:
+                    print('ESXi Agent Manager is running for HyperFLex:')
+                    print()
+                    print("You can remove ESXi Agent Manager for HyperFlex by removing the HX Cluster in vCenter")
+                    print("And reregister the HyperFlex cluster to vCenter again.")
+                    print()
+                    print('You will need to provide the HyperFlex Controller VM passwords when the script is running')
+                    print('This process will take about 5 min per HyperFlex Node')
+                    print()
+                    if testing == True:
+                        print("Script is going on. Normally you will see a question here.")
+                    else:
+                        answer = input('Enter yes if you want to continue : ')
+                        if answer != 'yes':
+                            os._exit(1)
                     ssh_executed = False
                     while ssh_executed == False:
                         input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
