@@ -13,6 +13,7 @@ IAmJoost.com
 import requests
 import json
 import os
+from HXBoostSettings import *
 
 # What model is the HyperFlex node ?
 # 1 = All Flash
@@ -20,10 +21,10 @@ import os
 # 0 = The rest.
 
 def hx_in_list(hxmodel):
-    hxflashcores = 12
-    hxnvmecores = 16
-    hxallflash = [['HXAF220C-M5SX', 'HXAF240C-M5SX'],hxflashcores]
-    hxallnvme =[['HXAF220C-M5SN'],hxnvmecores]
+    #hxflashcores = 12
+    #hxnvmecores = 16
+    #hxallflash = [['HXAF220C-M5SX', 'HXAF240C-M5SX'],hxflashcores]
+    #hxallnvme =[['HXAF220C-M5SN'],hxnvmecores]
     if hxmodel in hxallflash[0]:
         return 1,hxallflash[1]
     else:
@@ -40,8 +41,7 @@ def hxexit(testing):
 
 # Generate HyperFlex API Token.
 def get_hxtoken(hxip, hxuser, hxpasswd):
-    payload = {'username': hxuser, 'password': hxpasswd, 'client_id': 'HxGuiClient', 'client_secret': 'Sunnyvale',
-               'redirect_uri': 'http://localhost:8080/aaa/redirect/'}
+    payload = {'username': hxuser, 'password': hxpasswd}
 
     headers = {
         "Content-type": "application/json",
@@ -54,6 +54,7 @@ def get_hxtoken(hxip, hxuser, hxpasswd):
         return (hxauth)
     else:
         print ("There was an error getting the Token.")
+        print ("You should be on HyperFlex Data Platform 4.0 or Higher !")
         print("HTTP Error Code: ",hxauth.status_code)
         print ("Message: ",hxauth.text)
 

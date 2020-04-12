@@ -1,4 +1,4 @@
-#TODO Read SupportedHXModels.json and fill in the correct supported models.
+#TODO VC Authentication failed !
 """
 HyperFlex Boost mode Script
 
@@ -85,7 +85,7 @@ def shutdown_controller(cip):
 
 # Getting the parameters
 def check_arg(args=None):
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description=textwrap.dedent('''\
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description=textwrap.dedent('''
          *****************   DISCLAIMER   ********************
          Please read the readme.txt regarding limitations of this script.
          Use this script at your own risk.
@@ -169,7 +169,6 @@ ucsmip = args.ucsmip
 ucsmuser = args.ucsmuser
 ucsmpasswd = args.ucsmpasswd
 
-
 if args.hxip == None:
     hxip = input("HyperFlex IP Address: ")
 
@@ -183,7 +182,7 @@ if args.vcip == None:
     vcip= input("vCenter IP Address: ")
 
 if args.vcuser == None:
-    vcuser = input("HyperFlex UserName: ")
+    vcuser = input("vCenter UserName: ")
 
 if args.vcpasswd == None:
     vcpasswd = getpass.getpass("Please enter the vCenter Password: ")
@@ -300,7 +299,6 @@ vms = vc.get_vms(vcip, vcsession)
 # Put the VM in JSON format
 vm_response = json.loads(vms.text)
 json_data = vm_response["value"]
-
 counter = 0
 
 for vm in json_data:
@@ -315,12 +313,25 @@ for vm in json_data:
                 x.append(vm.get("vm"))
                 x.append(False)
 
+
 # Structure of L_hx
 # [['huuid','SerialNumber Node','HX Model','Node Status','HX CVM IP','VM name','VM ID','Upgraded True/False'],...[]]
 
 for node in L_hx:
     vmid = node[7]
     if node[8] == False:
+        #TODO Loop for all servers
+        hxserial=node[1]
+        print ("Serial: ",hxserial)
+        if vc.eam_enabled(vcip,vcsession,hxserial):
+            print ("EAM Enabled.")
+        else:
+            print ("No EAM")
+
+        os._exit(1)
+
+
+#############
         textcpu = vc.get_cpu_vm(vcip, node[7], vcsession)
         cpu_response = json.loads(textcpu.text)
         cpu_json_data = cpu_response["value"]
