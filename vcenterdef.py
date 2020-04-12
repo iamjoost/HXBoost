@@ -21,8 +21,6 @@ def get_vms(vcip,s):
     return vms
 
 def get_cluster_id(vcip,s):
-    #TODO Return multiple clusters ?
-
     vms = s.get('https://' + vcip + '/rest/vcenter/cluster')
     vm_response = json.loads(vms.text)
     json_data = vm_response["value"]

@@ -64,8 +64,6 @@ urllib3.disable_warnings()  # Disable warnings when you're not working with cert
 ##################
 
 # -------------------- SSH -----------------------
-# TODO When SecureShell is enabled, SSH with Root is NOT possible anymore.
-
 # SSH into HX Controller and shutdown the system.
 def shutdown_controller(cip):
     my_timeout = 100  # Seconds
@@ -362,7 +360,7 @@ for node in L_hx:
 
         print('Waiting for shutdown of : ' + node[6])
         while (vm_status_power != "POWERED_OFF") and testing == False:
-            print('.'),
+            print('.', end='')
             # Get VM Info Again.
             vmstatus = vc.get_power_vm(vcip, node[7], vcsession)
             vm_status = json.loads(vmstatus.text)
@@ -408,7 +406,7 @@ for node in L_hx:
             time.sleep(30)
         hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         while not hxready:
-            print('.'),
+            print('.', end='')
             if not testing:
                 time.sleep(10)
             hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
