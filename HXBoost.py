@@ -258,12 +258,14 @@ else:
                 hxmodel = hxdef.hx_in_list(compute.model)
                 # hxmodel[0] = 1 for All Flash, 2 for All NVMe
                 # hxmodel[1] = Number of cores needed.
+                if hxmodel[0] == 1:
+                    print ("This is a HyperFlex All-Flash system")
+                if hxmodel[0] == 2:
+                    print ("This is a HyperFlex All-NVMe system")
 
                 if hxmodel[0] >= 1:
                     CoresPerCPU = int(compute.num_of_cores_enabled) / int(compute.num_of_cpus)
 
-########################### TESTING ######################
-                    CoresPerCPU = 12
                     if CoresPerCPU < hxmodel[1]:
                         print("CPU don't have enough cores. Minimum of",hxmodel[1],"cores per CPU required.")
                         hxdef.hxexit(testing)
