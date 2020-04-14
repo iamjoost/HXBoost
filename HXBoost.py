@@ -16,7 +16,7 @@ Earlier HXDP of 4.0.2a are not supported.
 You can change this script to have it working anyway you want.
 THIS SCRIPT IS NOT IDIOT PROOF
 
---FORCE ON will Power Off the HX CVM not gracefully! Use with Caution.
+--FORCE ON will Power Off the HX CVM not gracefully! Use with Caution, you daredevel !
 --test True will test the script, ignore the warnings and it WON'T update the stCVM.
 
 Author: Joost van der Made
@@ -310,8 +310,6 @@ vceam = True
 for node in L_hx:
     vmid = node[7]
     if node[8] == False:
-        #TODO Loop for all servers
-
         hxserial=node[1]
         if vceam is True:
             if not vc.eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
