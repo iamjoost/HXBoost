@@ -79,19 +79,11 @@ def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
     si = None
     stCtlVMName = 'STCTLVM-'
 
-    # try:
-    #     vc_url, cluster_id = getURL()
-    # except:
-    #     vc_url = '10.1.15.12'  # prompt("Enter vCenter URL:  ", 'text')
-    #     #     cluster_id = 'domain-c336'  # prompt("Enter vCenter Cluster DomainID (mob):  ", 'text')
-    #     # cluster_id = 'group-d1'  # prompt("Enter vCenter Cluster DomainID (mob):  ", 'text')
-    #     print("Connecting to VC {}".format(vc_url))
-
     while True:
 
-        vc_url = vcip #print("vCenter URL: {}".format(vc_url))
-        vc_user = vcuser #'administrator@vsphere.local'  # prompt("Enter vCenter username (user@domain): ", 'text')
-        vc_pwd = vcpasswd #'Hyp3rFlex123!'  # getpass.getpass('vCenter Password: ')
+        vc_url = vcip #
+        vc_user = vcuser
+        vc_pwd = vcpasswd
 
         try:
             si = connect.SmartConnect(host=vc_url, user=vc_user, pwd=vc_pwd)
@@ -103,7 +95,7 @@ def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
             os._exit(1)
 
 
-    #vcsession = vc.get_vc_session(vc_url, vc_user, vc_pwd)
+
 
     cluster_id = get_cluster_id(vc_url, vcsession)
 
