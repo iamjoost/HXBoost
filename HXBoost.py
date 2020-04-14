@@ -153,6 +153,7 @@ print("If you don't have a cluster with the required hardware and software, the 
 print()
 print("Use this script on your own responsibility. To test the script use the argument: --test true")
 print()
+print ("-----------------------L E T S   S T A R T --------------------")
 
 hxip = args.hxip
 hxuser = args.hxuser
@@ -212,7 +213,9 @@ if args.hxtoken == None:
     # Get the Token.
     hxbearer = hxdef.get_hxtoken(hxip, hxuser, hxpasswd).json()
     hxtoken = hxbearer['access_token']
+    print("-------------------------------------------------------------")
     print ('HX Token: ',hxtoken)
+    print("-------------------------------------------------------------")
 
 # Get HX CLuster UUID
 clusteruuid = hxdef.get_hxuuid(hxip, hxtoken)
@@ -278,6 +281,7 @@ else:
     handle.logout()
     print("This is a HyperFlex All-Flash or All-NVMe Cluster.")
 
+print("-------------------------------------------------------------")
 print('Please Have Patience and dont abort this script.')
 vcsession = vc.get_vc_session(vcip, vcuser, vcpasswd)
 
@@ -360,7 +364,7 @@ for node in L_hx:
 
         print('Waiting for shutdown of : ' + node[6])
         while (vm_status_power != "POWERED_OFF") and testing == False:
-            print('.', end='')
+            print('.')
             # Get VM Info Again.
             vmstatus = vc.get_power_vm(vcip, node[7], vcsession)
             vm_status = json.loads(vmstatus.text)
@@ -406,17 +410,18 @@ for node in L_hx:
             time.sleep(30)
         hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         while not hxready:
-            print('.', end='')
+            print('.')
             if not testing:
                 time.sleep(10)
             hxready = hxdef.get_hxstatus(hxip, hxtoken, clusteruuid)
         # input("Verify if the HX Cluster is really Healthy !!! Press Enter to continue...")
 
         print('HyperFlex is Healthy again.')
-        print('We are repeating these steps until all HX CVM are reconfigured.')
+        print('We are repeating these steps until all HyperFlex Storage Controllers are reconfigured.')
+        print("-------------------------------------------------------------")
 
 print()
 if enable_boost_mode is True:
-    print("Configure HyperFlex Boost Mode is now finished.")
+    print("HyperFlex Boost Mode is now configured.")
 else:
-    print('Disable HyperFlex Boost Mode is now finished.')
+    print('HyperFlex Boost Mode is now disabled.')
