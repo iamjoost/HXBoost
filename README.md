@@ -5,6 +5,8 @@
 This script will automatically enable or disable HyperFlex boost mode on the cluster.
 
 ### Requirements
+Python 3.8 is needed to run this script.
+
 HyperFlex Boost Mode can be enabled when:
 - HXDP 4.02a or higher is running
 - HX All-Flash with a CPU with aminimum of 12 cores
