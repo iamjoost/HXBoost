@@ -1,5 +1,5 @@
 #TODO SSH Shutdown is for ROOT only !
-
+# TODO SKIP Instead Fake....
 """
 HyperFlex Boost mode Script
 
@@ -334,7 +334,7 @@ for node in L_hx:
 
         vm_status_power = ""
         if testing:
-            print("Fake power off of the Storage Controller.")
+            print("Test Mode On: Skipping real power off of the Storage Controller.")
 
         else:
             if args.force == 'on':
@@ -377,7 +377,7 @@ for node in L_hx:
 
         # Change CPU
         if testing:
-            print("Fake changing vCPUs of Storage Controller.")
+            print("Testmode is On: Skipping changing vCPUs of Storage Controller.")
         else:
             if enable_boost_mode:
                 vc.update_cpu_vm(vcip, node[7], cpucount + 4, vcsession)

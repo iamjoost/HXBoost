@@ -35,13 +35,6 @@ def get_cluster_id(vcip,s):
 
     return L
 
-def getURL():
-    cmd = ['/bin/stcli', '--raw', 'cluster', 'info']
-    out = Popen(cmd, stderr=STDOUT, stdout=PIPE)
-    data = out.communicate()[0]
-    clusterInfo = json.loads(data)
-    return clusterInfo['config']['vCenterURL'], clusterInfo['config']['vCenterClusterId']
-
 def prompt(message, inputType):
 
     while True:
@@ -76,7 +69,7 @@ def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
     import requests.packages.urllib3
     requests.packages.urllib3.disable_warnings()
 
-    si = None
+    vcsi = None
     stCtlVMName = 'STCTLVM-'
 
     while True:
@@ -86,10 +79,10 @@ def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
         vc_pwd = vcpasswd
 
         try:
-            si = connect.SmartConnect(host=vc_url, user=vc_user, pwd=vc_pwd)
+            vcsi = connect.SmartConnect(host=vc_url, user=vc_user, pwd=vc_pwd)
         except vmodl.MethodFault as e:
             print("Could not connect to vCenter - {}".format(e.msg))
-        if si is not None:
+        if vcsi is not None:
             break
         else:
             os._exit(1)
@@ -99,7 +92,7 @@ def eam_enabled(vcip,vcuser,vcpasswd,vcsession,hxserial):
 
     cluster_id = get_cluster_id(vc_url, vcsession)
 
-    container = si.content.viewManager.CreateContainerView(si.content.rootFolder, [vim.ClusterComputeResource], True)
+    container = vcsi.content.viewManager.CreateContainerView(vcsi.content.rootFolder, [vim.ClusterComputeResource], True)
     for c in container.view:
         # print (c._moId)
         # if c._moId == cluster_id:
