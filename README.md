@@ -30,8 +30,8 @@ python HXBoost.py -h
 usage: HXBoost.py [-h] [--hxip HXIP] [--hxpasswd HXPASSWD] [--hxuser HXUSER]
                   [--vcuser VCUSER] [--vcpasswd VCPASSWD] [--vcip VCIP]
                   [--ucsmuser UCSMUSER] [--ucsmpasswd UCSMPASSWD]
-                  [--ucsmip UCSMIP] --hxboost {on,off} [--force FORCE]
-                  [--hxtoken HXTOKEN] [--vceam {yes,no}] [--test {true,false}]
+                  [--ucsmip UCSMIP] --hxboost {on,off} 
+                  [--hxtoken HXTOKEN] [--test {true,false}]
 
 *****************   DISCLAIMER   ********************
 Please read the readme.txt regarding limitations of this script.
@@ -51,9 +51,7 @@ optional arguments:
                         UCS-M Password
   --ucsmip UCSMIP       UCS-M IP Address
   --hxboost {on,off}    HyperFlex Boostmode on / off
-  --force FORCE         Force power off : on / off
   --hxtoken HXTOKEN     HyperFlex API Token
-  --vceam {yes,no}      Is EAM Running
   --test {true,false}   Test the script without doing it. When set to "true"
                         the script will run and not change the vCPUs.
 ```

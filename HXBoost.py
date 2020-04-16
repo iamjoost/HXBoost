@@ -117,9 +117,6 @@ def check_arg(args=None):
                         help='HyperFlex Boostmode on / off',
                         required='True'
                         )
-    parser.add_argument('--force',
-                        help='Force power off : on / off',
-                        default='off')
     parser.add_argument('--hxtoken',
                         help='HyperFlex API Token'
                         )
