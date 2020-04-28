@@ -5,9 +5,11 @@ idna==2.9
 prompt-toolkit==3.0.5
 pyflakes==2.2.0
 Pygments==2.6.1
+pyparsing==2.4.7
 pyvim==3.0.2
 pyvmomi==7.0
 requests==2.23.0
 six==1.14.0
+ucsmsdk==0.9.10
 urllib3==1.25.8
 wcwidth==0.1.9

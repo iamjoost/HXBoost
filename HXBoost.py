@@ -291,7 +291,7 @@ json_data = vm_response["value"]
 counter = 0
 
 for vm in json_data:
-    text = vm.get("name")[0:8]
+    text = vm.get('name')[0:8]
     # print (text)
     if text == "stCtlVM-":
         # Find name in L_hx table.
