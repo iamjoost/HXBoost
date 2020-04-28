@@ -16,7 +16,7 @@ Earlier HXDP of 4.0.2a are not supported.
 You can change this script to have it working anyway you want.
 THIS SCRIPT IS NOT IDIOT PROOF
 
---FORCE ON will Power Off the HX CVM not gracefully! Use with Caution, you daredevel !
+
 --test True will test the script, ignore the warnings and it WON'T update the stCVM.
 
 Author: Joost van der Made
@@ -334,9 +334,6 @@ for node in L_hx:
             print("Test Mode On: Skipping real power off of the Storage Controller.")
 
         else:
-            # if args.force == 'on':
-            #    vc.poweroff_vm(node[7], vcip, vcsession)
-            #else:
             if vceam is False:
                 vc.shutdownvm(vcip, vmid,vcsession)
             else:
