@@ -1,7 +1,7 @@
 # ---------------------- VMware vCenter ----------------------
 import requests
 import json
-from pyVim import connect
+from pyvim import connect
 from pyVmomi import vim, vmodl
 import ssl
 
