@@ -334,30 +334,30 @@ for node in L_hx:
             print("Test Mode On: Skipping real power off of the Storage Controller.")
 
         else:
-            if args.force == 'on':
-                vc.poweroff_vm(node[7], vcip, vcsession)
+            # if args.force == 'on':
+            #    vc.poweroff_vm(node[7], vcip, vcsession)
+            #else:
+            if vceam is False:
+                vc.shutdownvm(vcip, vmid,vcsession)
             else:
-                if vceam is False:
-                    vc.shutdownvm(vcip, vmid,vcsession)
+                print('ESXi Agent Manager is running for HyperFLex:')
+                print()
+                print("You can remove ESXi Agent Manager for HyperFlex by removing the HX Cluster in vCenter")
+                print("And reregister the HyperFlex cluster to vCenter again.")
+                print()
+                print('You will need to provide the HyperFlex Controller VM passwords when the script is running')
+                print('This process will take about 5 min per HyperFlex Node')
+                print()
+                if testing == True:
+                    print("Script is going on. Normally you will see a question here.")
                 else:
-                    print('ESXi Agent Manager is running for HyperFLex:')
-                    print()
-                    print("You can remove ESXi Agent Manager for HyperFlex by removing the HX Cluster in vCenter")
-                    print("And reregister the HyperFlex cluster to vCenter again.")
-                    print()
-                    print('You will need to provide the HyperFlex Controller VM passwords when the script is running')
-                    print('This process will take about 5 min per HyperFlex Node')
-                    print()
-                    if testing == True:
-                        print("Script is going on. Normally you will see a question here.")
-                    else:
-                        answer = input('Enter yes if you want to continue : ')
-                        if answer != 'yes':
-                            os._exit(1)
-                    ssh_executed = False
-                    while ssh_executed == False:
-                        input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
-                        ssh_executed = shutdown_controller(node[4])
+                    answer = input('Enter yes if you want to continue : ')
+                    if answer != 'yes':
+                        os._exit(1)
+                ssh_executed = False
+                while ssh_executed == False:
+                    input('You will have 100 seconds to provide the root password. Hit Enter to Login to HX CVM: ')
+                    ssh_executed = shutdown_controller(node[4])
 
         print('Waiting for shutdown of : ' + node[6])
         while (vm_status_power != "POWERED_OFF") and testing == False:

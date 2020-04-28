@@ -1,9 +1,5 @@
 certifi==2020.4.5.1
 chardet==3.0.4
 idna==2.9
-pyparsing==2.4.7
-pyvmomi==6.7.3
 requests==2.23.0
-six==1.14.0
-ucsmsdk==0.9.9
 urllib3==1.25.8
