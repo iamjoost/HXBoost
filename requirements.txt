@@ -11,5 +11,5 @@ pyvmomi==7.0
 requests==2.23.0
 six==1.14.0
 ucsmsdk==0.9.10
-urllib3==1.25.8
+urllib3==1.26.5
 wcwidth==0.1.9
