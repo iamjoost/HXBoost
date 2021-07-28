@@ -12,7 +12,7 @@ HyperFlex Boost Mode can be enabled when:
 - HX All-Flash with a CPU with aminimum of 12 cores
 - HX All-NVMe with a CPU with aminimum of 16 cores
 
-This script is tested with HXDP 4.0.2a, ESXi 6.7U3 and vCenter 6.7
+This script is tested with HXDP 4.0.2a, 4.5(1a),ESXi 6.7U3, &.0U1 and vCenter 6.7, 7.0
 
 Use this script only in your lab environment.
 
